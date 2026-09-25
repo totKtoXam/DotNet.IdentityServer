@@ -1,0 +1,51 @@
+# Product checks for the fork.
+# Guards the upstream code boundary and builds the solution for changes targeting product/main.
+
+name: Product CI
+
+on:
+  push:
+    branches:
+      - product/main
+  pull_request:
+    branches:
+      - product/main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upstream-boundary:
+    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'sync/upstream-')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Check upstream boundary
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash product/scripts/check-upstream-boundary.sh "origin/$BASE_REF" HEAD
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run build script
+        run: bash ./build.sh
