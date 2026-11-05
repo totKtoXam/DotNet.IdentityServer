@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Edit(/docs/**)",
+      "Edit(/samples/**)",
+      "Edit(/src/**)",
+      "Edit(/.gitignore)",
+      "Edit(/AI_POLICY.md)",
+      "Edit(/CONTRIBUTING.md)",
+      "Edit(/Directory.Build.props)",
+      "Edit(/GitReleaseManager.yaml)",
+      "Edit(/LICENSE)",
+      "Edit(/NuGet.config)",
+      "Edit(/Open.IdentityServer.sln)",
+      "Edit(/OpenIdentityServerIcon.png)",
+      "Edit(/README.md)",
+      "Edit(/Roadmap.md)",
+      "Edit(/SECURITY.MD)",
+      "Edit(/SUPPORTERS.MD)",
+      "Edit(/build.ps1)",
+      "Edit(/build.sh)",
+      "Edit(/clean.ps1)",
+      "Edit(/clean.sh)",
+      "Edit(/clean_cache.ps1)",
+      "Edit(/clean_cache.sh)",
+      "Edit(/create_persisted_grant_store.sh)",
+      "Edit(/global.json)",
+      "Edit(/icon.jpg)",
+      "Edit(/key.snk)",
+      "Edit(/main.cmd)",
+      "Edit(/rebuild.ps1)",
+      "Edit(/rebuild.sh)",
+      "Edit(/signClient.json)",
+      "Edit(/version++.sh)",
+      "Edit(/.github/PULL_REQUEST_TEMPLATE.md)",
+      "Edit(/.github/workflows/docs.yml)",
+      "Edit(/.github/workflows/dotnet.yml)",
+      "Edit(/.github/workflows/nuget-publish.yml)",
+      "Edit(/.claude/settings.json)"
+    ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
+}

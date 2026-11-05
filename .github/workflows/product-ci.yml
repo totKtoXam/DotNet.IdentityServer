@@ -1,0 +1,87 @@
+# Product checks for the fork.
+# Guards the upstream code boundary and builds upstream and product code for every change of
+# product/main, including upstream sync PRs, pushes after merge (catches a squash-merged sync)
+# and a daily run (skip-ci markers do not apply to scheduled runs).
+
+name: Product CI
+
+on:
+  push:
+    branches:
+      - product/main
+  pull_request:
+    branches:
+      - product/main
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  UPSTREAM_URL: https://github.com/RockSolidKnowledge/Open.IdentityServer.git
+
+jobs:
+  upstream-boundary:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch upstream release tags
+        run: git fetch --no-tags "$UPSTREAM_URL" '+refs/tags/*:refs/upstream-tags/*'
+
+      - name: Reject numeric tags created in the fork
+        run: |
+          fmt='%(refname:strip=2) %(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)'
+          git for-each-ref --format="$fmt" 'refs/tags/[0-9]*' | LC_ALL=C sort > "$RUNNER_TEMP/fork-tags"
+          git for-each-ref --format="$fmt" 'refs/upstream-tags/[0-9]*' | LC_ALL=C sort > "$RUNNER_TEMP/upstream-tags"
+          LC_ALL=C comm -23 "$RUNNER_TEMP/fork-tags" "$RUNNER_TEMP/upstream-tags" > "$RUNNER_TEMP/foreign-tags"
+          if [ -s "$RUNNER_TEMP/foreign-tags" ]; then
+            echo "::error::Numeric tags belong to upstream. These fork tags are missing upstream or point elsewhere:"
+            cat "$RUNNER_TEMP/foreign-tags"
+            exit 1
+          fi
+
+      - name: Lint product scripts
+        run: shellcheck -S warning product/scripts/*.sh product/scripts/hooks/pre-commit
+
+      - name: Check upstream boundary
+        env:
+          UPSTREAM_TAG_NS: refs/upstream-tags
+        run: bash product/scripts/check-upstream-boundary.sh HEAD
+
+  product-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      # MinVer computes package and assembly versions from these tags.
+      - name: Fetch upstream release tags
+        run: git fetch --no-tags "$UPSTREAM_URL" '+refs/tags/*:refs/tags/*'
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build and test upstream
+        run: bash ./build.sh
+
+      - name: Build and test product
+        run: |
+          shopt -s nullglob
+          for solution in product/*.slnx product/*.sln; do
+            dotnet build "$solution" -c Release
+            dotnet test "$solution" -c Release --no-build
+          done

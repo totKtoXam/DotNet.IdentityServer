@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Blocks commits that modify upstream files. Enable once per clone:
+#   git config core.hooksPath product/scripts/hooks
+exec "$(git rev-parse --show-toplevel)/product/scripts/check-upstream-boundary.sh" --staged

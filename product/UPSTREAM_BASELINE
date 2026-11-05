@@ -1,0 +1,3 @@
+# Upstream release merged into this branch. Written by product/scripts/sync-upstream.sh; do not edit by hand.
+tag=2.0.0
+commit=c60f39c07564c52af80e71e93b0d22ec0598319e

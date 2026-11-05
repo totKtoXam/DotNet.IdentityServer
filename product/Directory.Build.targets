@@ -1,0 +1,6 @@
+<Project>
+  <!--
+    Stops MSBuild from picking up a Directory.Build.targets that upstream may add at the
+    repository root. Product build targets go here.
+  -->
+</Project>
