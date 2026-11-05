@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    Build settings for product projects.
+    Intentionally does not import the upstream ../Directory.Build.props: its VersionPrefix,
+    Company and WarningsAsErrors belong to the Open.IdentityServer packages and change on
+    every upstream sync.
+  -->
+  <PropertyGroup>
+    <!-- Product release tags are product/v<version>; plain semver tags belong to upstream. -->
+    <MinVerTagPrefix>product/v</MinVerTagPrefix>
+  </PropertyGroup>
+</Project>

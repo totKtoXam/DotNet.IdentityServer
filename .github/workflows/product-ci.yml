@@ -1,5 +1,6 @@
 # Product checks for the fork.
-# Guards the upstream code boundary and builds the solution for changes targeting product/main.
+# Guards the upstream code boundary and builds the solution for every change of product/main,
+# including upstream sync PRs and pushes after merge (catches a squash-merged sync).
 
 name: Product CI
 
@@ -15,9 +16,11 @@ on:
 permissions:
   contents: read
 
+env:
+  UPSTREAM_URL: https://github.com/RockSolidKnowledge/Open.IdentityServer.git
+
 jobs:
   upstream-boundary:
-    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'sync/upstream-')
     runs-on: ubuntu-latest
 
     steps:
@@ -27,12 +30,33 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Fetch upstream release tags
+        run: git fetch --no-tags "$UPSTREAM_URL" '+refs/tags/*:refs/upstream-tags/*'
+
+      - name: Reject numeric tags created in the fork
+        run: |
+          fmt='%(refname:strip=2) %(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)'
+          git for-each-ref --format="$fmt" 'refs/tags/[0-9]*' | sort > "$RUNNER_TEMP/fork-tags"
+          git for-each-ref --format="$fmt" 'refs/upstream-tags/[0-9]*' | sort > "$RUNNER_TEMP/upstream-tags"
+          comm -23 "$RUNNER_TEMP/fork-tags" "$RUNNER_TEMP/upstream-tags" > "$RUNNER_TEMP/foreign-tags"
+          if [ -s "$RUNNER_TEMP/foreign-tags" ]; then
+            echo "::error::Numeric tags belong to upstream. These fork tags are missing upstream or point elsewhere:"
+            cat "$RUNNER_TEMP/foreign-tags"
+            exit 1
+          fi
+
+      - name: Validate .claude/settings.json
+        run: jq empty .claude/settings.json
+
+      - name: Lint product scripts
+        run: shellcheck -S warning product/scripts/*.sh product/scripts/hooks/pre-commit
+
       - name: Check upstream boundary
         env:
-          BASE_REF: ${{ github.base_ref }}
-        run: bash product/scripts/check-upstream-boundary.sh "origin/$BASE_REF" HEAD
+          UPSTREAM_TAG_NS: refs/upstream-tags
+        run: bash product/scripts/check-upstream-boundary.sh HEAD
 
-  build:
+  product-build:
     runs-on: ubuntu-latest
 
     steps:
